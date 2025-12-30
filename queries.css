@@ -1,0 +1,10 @@
+body {
+  background: purple;
+  text-align: center;
+  color: white;
+}
+
+textarea {
+  width: 85%;
+  height: 120px;
+}
