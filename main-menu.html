@@ -1,27 +1,118 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Main Menu</title>
-  <link rel="stylesheet" href="css/main-menu.css">
+<meta charset="UTF-8">
+<title>SPACE GLASS - Main Menu</title>
+<style>
+body {
+  margin:0; padding:0; font-family: Arial, sans-serif;
+  background: url('https://images.unsplash.com/photo-1549924231-f129b911e442?auto=format&fit=crop&w=1470&q=80') no-repeat center center fixed;
+  background-size: cover;
+  height:100vh;
+  overflow:hidden;
+}
+#glass {
+  position:absolute;
+  top:50%; left:50%;
+  width:350px; height:350px;
+  background: rgba(255,255,255,0.1);
+  border-radius:50%;
+  transform: translate(-50%, -50%) rotate(15deg);
+}
+.tabs {
+  position:absolute; bottom:50px; width:100%;
+  display:flex; justify-content:center; gap:20px;
+}
+.tab {
+  width:100px; height:50px; background:rgba(255,255,255,0.2);
+  display:flex; justify-content:center; align-items:center;
+  border-radius:8px; cursor:pointer; font-weight:bold; color:white;
+}
+#logout { position:absolute; top:10px; left:10px; cursor:pointer; font-size:24px; color:white; }
+#profile { position:absolute; top:10px; right:10px; cursor:pointer; font-size:24px; color:white; }
+#messages { position:absolute; top:10px; right:50px; cursor:pointer; font-size:24px; color:white; }
+</style>
 </head>
 <body>
 
-<button id="logout">🔙</button>
+<div id="glass"></div>
 
-<div id="top-icons">
-  <button id="messages">✉️</button>
-  <button id="profile">👤</button>
-</div>
-
-<h1 id="game-title">SPACE GLASS</h1>
+<div id="logout">🔙</div>
+<div id="messages">✉</div>
+<div id="profile">👤</div>
 
 <div class="tabs">
-  <button id="prizes">PRIZES</button>
-  <button id="scores">SCORES</button>
-  <button id="play">PLAY</button>
-  <button id="wallet">WALLET</button>
+  <div class="tab" id="prizesTab">PRIZES</div>
+  <div class="tab" id="scoresTab">SCORES</div>
+  <div class="tab" id="playTab">PLAY</div>
+  <div class="tab" id="walletTab">WALLET</div>
 </div>
 
-<script type="module" src="js/main-menu.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+// Firebase Config
+const firebaseConfig = {
+  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+  authDomain: "tose-ccf8f.firebaseapp.com",
+  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "tose-ccf8f",
+  storageBucket: "tose-ccf8f.firebasestorage.app",
+  messagingSenderId: "475447495901",
+  appId: "1:475447495901:web:9189276a162a3680afdf34",
+  measurementId: "G-PWC5R6Q8JD"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// Logout
+document.getElementById('logout').addEventListener('click', () => {
+  window.location.href = 'index.html';
+});
+
+// Profile
+document.getElementById('profile').addEventListener('click', () => {
+  window.location.href = 'profile.html';
+});
+
+// Messages
+document.getElementById('messages').addEventListener('click', () => {
+  window.location.href = 'messages.html';
+});
+
+// Tabs navigation
+document.getElementById('prizesTab').addEventListener('click', () => { window.location.href='prizes.html'; });
+document.getElementById('scoresTab').addEventListener('click', () => { window.location.href='scores.html'; });
+document.getElementById('playTab').addEventListener('click', async () => {
+  try {
+    const snapshot = await get(child(ref(db), 'currentPrize'));
+    if(snapshot.exists()) {
+      window.location.href='game.html';
+    } else {
+      alert('PRIZE NOT SET YET');
+    }
+  } catch(err) {
+    alert(err.message);
+  }
+});
+document.getElementById('walletTab').addEventListener('click', () => { window.location.href='wallet.html'; });
+
+// Change login button color dynamically if signup exists
+async function checkSignup() {
+  try {
+    const snapshot = await get(child(ref(db), 'users'));
+    if(snapshot.exists()) {
+      // Found at least one user → set login tab color to yellow
+      document.getElementById('playTab').style.backgroundColor='yellow';
+    }
+  } catch(err) {
+    console.log(err);
+  }
+}
+checkSignup();
+
+</script>
 </body>
 </html>
