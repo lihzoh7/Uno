@@ -50,7 +50,7 @@ body {
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getDatabase } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 // Firebase Config
 const firebaseConfig = {
@@ -67,52 +67,47 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Logout
-document.getElementById('logout').addEventListener('click', () => {
-  window.location.href = 'index.html';
-});
-
-// Profile
-document.getElementById('profile').addEventListener('click', () => {
-  window.location.href = 'profile.html';
-});
-
-// Messages
-document.getElementById('messages').addEventListener('click', () => {
-  window.location.href = 'messages.html';
-});
-
-// Tabs navigation
+// ---------------------- NAVIGATION ----------------------
+document.getElementById('logout').addEventListener('click', () => { window.location.href = 'index.html'; });
+document.getElementById('profile').addEventListener('click', () => { window.location.href = 'profile.html'; });
+document.getElementById('messages').addEventListener('click', () => { window.location.href = 'messages.html'; });
 document.getElementById('prizesTab').addEventListener('click', () => { window.location.href='prizes.html'; });
 document.getElementById('scoresTab').addEventListener('click', () => { window.location.href='scores.html'; });
-document.getElementById('playTab').addEventListener('click', async () => {
-  try {
-    const snapshot = await get(child(ref(db), 'currentPrize'));
-    if(snapshot.exists()) {
-      window.location.href='game.html';
-    } else {
-      alert('PRIZE NOT SET YET');
-    }
-  } catch(err) {
-    alert(err.message);
-  }
-});
 document.getElementById('walletTab').addEventListener('click', () => { window.location.href='wallet.html'; });
 
-// Change login button color dynamically if signup exists
-async function checkSignup() {
-  try {
-    const snapshot = await get(child(ref(db), 'users'));
-    if(snapshot.exists()) {
-      // Found at least one user → set login tab color to yellow
-      document.getElementById('playTab').style.backgroundColor='yellow';
-    }
-  } catch(err) {
-    console.log(err);
-  }
-}
-checkSignup();
+// ---------------------- PLAY BUTTON SCHEDULE ----------------------
+document.getElementById('playTab').addEventListener('click', () => {
+  const now = new Date();
+  let nowMinutes = now.getHours() * 60 + now.getMinutes(); // minutes since midnight
 
+  // Define rest periods in minutes since midnight
+  const restPeriods = [
+    { start: 17*60 + 30, end: 18*60 },  // 17:30 - 18:00
+    { start: 5*60 + 30, end: 6*60 }     // 5:30 - 6:00
+  ];
+
+  // Check if we are in a rest period
+  const inRest = restPeriods.some(period => {
+    let start = period.start;
+    let end = period.end;
+
+    // Handle rest period that wraps past midnight
+    if (end < start) {
+      if (nowMinutes >= start || nowMinutes < end) return true;
+    } else {
+      if (nowMinutes >= start && nowMinutes < end) return true;
+    }
+    return false;
+  });
+
+  if (inRest) {
+    alert('GAME NOT RUNNING NOW (rest period)');
+    return;
+  }
+
+  // Otherwise, game is active
+  window.location.href = 'game.html';
+});
 </script>
 </body>
 </html>
