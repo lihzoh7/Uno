@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>***SLIDE***</title>
+  <style>
+    :root{--game-width:100%;--game-height:500px}
+    body{margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#111;font-family:Inter,system-ui,Arial;color:#fff}
+    .game-wrap{width:800px;max-width:96vw;height:var(--game-height);position:relative;overflow:hidden;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.7)}
+    .bg{position:absolute;inset:0;background-image:url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?fit=crop&w=1600&q=80');background-size:cover;background-repeat:repeat-x;transform:translateZ(0)}
+    .player{position:absolute;left:120px;width:48px;height:72px;font-size:40px;display:flex;align-items:center;justify-content:center;pointer-events:none;text-shadow:0 2px 8px rgba(0,0,0,.6);z-index:30;transition:transform .08s linear}
+    .ring{position:absolute;width:84px;height:84px;border-radius:50%;box-sizing:border-box;pointer-events:none;display:flex;align-items:center;justify-content:center;z-index:10}
+    .ring.visual{border:6px solid rgba(255,215,0,.95);filter:drop-shadow(0 8px 18px rgba(255,200,60,.15));transform:rotateX(80deg);}
+    .fruit{position:absolute;font-size:32px;animation:float 2s ease-in-out infinite alternate;z-index:12}
+    @keyframes float{from{transform:translateY(-5px)}to{transform:translateY(5px)}}
+    .hud{position:absolute;left:12px;top:12px;z-index:50}
+    .title{font-weight:800;font-style:italic;font-size:20px;letter-spacing:.5px}
+    .score{margin-top:6px;font-size:16px}
+    .overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);flex-direction:column;z-index:120}
+    .btn{margin-top:14px;padding:10px 16px;border-radius:8px;border:0;background:#1f8f3d;color:white;font-weight:700;cursor:pointer}
+    .turbo{position:absolute;font-size:36px;z-index:28;pointer-events:none;filter:drop-shadow(0 8px 18px rgba(0,0,0,.5))}
+    .fly{position:absolute;font-size:28px;z-index:28;pointer-events:none}
+    .rocket{position:absolute;font-size:18px;z-index:26}
+    .missPopup{position:absolute;left:50%;transform:translateX(-50%);top:28px;background:rgba(255,80,80,0.9);padding:8px 12px;border-radius:8px;font-weight:800;z-index:200;opacity:0;transition:opacity .3s}
+    .immunityBarWrap{position:absolute;left:190px;top:18px;width:140px;height:10px;border-radius:8px;background:rgba(255,255,255,0.12);overflow:hidden;z-index:60;display:none}
+    .immunityBar{height:100%;width:100%;background:linear-gradient(90deg,#8be3ff,#4be29f);transform-origin:left;transition:width .1s}
+    .explosion{position:absolute;width:100px;height:100px;border-radius:50%;pointer-events:none;z-index:40;mix-blend-mode:screen}
+    .final-row{display:flex;gap:12px;align-items:center}
+  </style>
+</head>
+<body>
+  <div class="game-wrap" id="game">
+    <div class="bg" id="bg"></div>
+    <div class="player" id="player">🍸</div>
+
+    <div class="hud">
+      <div class="title"><strong><em>SLIDE</em></strong></div>
+      <div class="score">Score: <span id="score">0</span></div>
+      <div class="lives">Lives: <span id="lives">0</span></div>
+    </div>
+
+    <div id="rings"></div>
+    <div id="fruits"></div>
+    <div id="turboWrap"></div>
+    <div id="flyWrap"></div>
+    <div id="rocketWrap"></div>
+    <div id="missPopup" class="missPopup"></div>
+    <div class="immunityBarWrap" id="immunityWrap"><div class="immunityBar" id="immunityBar"></div></div>
+
+    <div id="overlay" class="overlay" style="display:none">
+      <div id="overlayText" style="font-size:28px;font-weight:800"></div>
+      <div id="finalDetails" style="margin-top:12px"></div>
+      <div id="continueLeaveWrap" style="margin-top:12px; display:flex; gap:12px;">
+        <button id="continueBtn" class="btn">CONTINUE (-1 LIFE)</button>
+        <button id="leaveBtn" class="btn">LEAVE</button>
+      </div>
+    </div>
+
+    <audio id="jumpSfx" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" preload="auto"></audio>
+    <audio id="shatterSfx" src="https://actions.google.com/sounds/v1/impacts/glass_breaking.ogg" preload="auto"></audio>
+    <audio id="winSfx" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" preload="auto"></audio>
+    <audio id="explosionSfx" src="https://actions.google.com/sounds/v1/impacts/explosion.ogg" preload="auto"></audio>
+    <audio id="bgMusic" src="https://cdn.pixabay.com/download/audio/2023/02/28/audio_91b56b86db.mp3?filename=chill-ambient-14013.mp3" loop preload="auto"></audio>
+  </div>
+
+<script>
+(async function(){
+  // ---------------------- CONFIG ----------------------
+  const PLAYER_X = 120;
+  const GAME_HEIGHT = 500;
+  const GRAVITY = 0.6;
+  const JUMP_FORCE = -10;
+  const RING_COUNT = 100;
+  const RING_SPACING = 300;
+  const FRUITS = ["🍎","🍌","🍇","🍊","🍉","🍓","🍍","🥝","🍒","🍐"];
+  const FRUIT_POINTS = [5,10,15,20,25,30,35,40,50,100];
+  const baseSpeed = 2;
+  const turboImmuneSeconds = 7;
+  const TURBO_INTERVAL = 14000; // 14s
+  const TURBO_DURATION = 3000; // 3s
+  const flySpeedMultiplier = 0.5;
+  const rocketSpawnInterval = 10000;
+  let rocketSpeedMultiplier = 1;
+
+  // ---------------------- STATE ----------------------
+  let playerY = 200;
+  let velocity = 0;
+  let rings = [];
+  let fruits = [];
+  let score = 0;
+  let gameOver = false;
+  let bgX = 0;
+  let missedRings = 0;
+  const MISS_LIMIT = 5;
+  let processedRings = 0;
+  let turbo = null;
+  let fly = null;
+  let activeRockets = [];
+  let rocketIntervalId = null;
+  let immune = false;
+  let immuneRemaining = 0;
+  let immunityTimerId = null;
+  let ringMultiplier = 1;
+  let lives = 0; // <- new: store player lives
+
+  // ---------------------- DOM ----------------------
+  const gameEl = document.getElementById('game');
+  const playerEl = document.getElementById('player');
+  const ringsEl = document.getElementById('rings');
+  const fruitsEl = document.getElementById('fruits');
+  const scoreEl = document.getElementById('score');
+  const overlay = document.getElementById('overlay');
+  const overlayText = document.getElementById('overlayText');
+  const finalDetails = document.getElementById('finalDetails');
+  const restartBtn = document.getElementById('restart');
