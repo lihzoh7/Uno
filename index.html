@@ -7,19 +7,20 @@
 body { background-color: navy; font-family: Arial, sans-serif; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; }
 .container { text-align:center; width:300px; }
 h1 { color:white; font-size:14px; margin-bottom:20px; }
-input { width:100%; padding:10px; margin:5px 0; box-sizing:border-box; border-radius:4px; border:none; }
-#loginBtn { width:100%; padding:10px; margin-top:10px; background-color:green; color:white; border:none; border-radius:4px; cursor:pointer; }
+input { width:100%; padding:10px; margin:5px 0; border-radius:4px; border:none; }
+button { width:100%; padding:10px; margin-top:10px; background:green; color:white; border:none; border-radius:4px; cursor:pointer; }
 .links { margin-top:10px; display:flex; justify-content:space-between; font-size:8px; color:white; }
 .links a { color:white; text-decoration:none; }
-.links a:hover { text-decoration:underline; }
 </style>
 </head>
 <body>
+
 <div class="container">
   <h1>LOG IN</h1>
-  <input id="email" type="email" placeholder="Email Address">
+  <input id="email" type="email" placeholder="Email">
   <input id="password" type="password" placeholder="Password">
   <button id="loginBtn">LOG IN</button>
+
   <div class="links">
     <a href="signup.html">SIGN UP</a>
     <a href="forgot.html">FORGOT PASSWORD</a>
@@ -29,51 +30,31 @@ input { width:100%; padding:10px; margin:5px 0; box-sizing:border-box; border-ra
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-// Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
   authDomain: "tose-ccf8f.firebaseapp.com",
-  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "tose-ccf8f",
-  storageBucket: "tose-ccf8f.firebasestorage.app",
-  messagingSenderId: "475447495901",
-  appId: "1:475447495901:web:9189276a162a3680afdf34",
-  measurementId: "G-PWC5R6Q8JD"
+  projectId: "tose-ccf8f"
 };
+
 const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+const auth = getAuth(app);
 
-const loginBtn = document.getElementById('loginBtn');
-loginBtn.addEventListener('click', async () => {
-  const email = document.getElementById('email').value.toLowerCase();
-  const password = document.getElementById('password').value;
+document.getElementById('loginBtn').onclick = async () => {
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
 
-  if (!email || !password) return alert('Enter email and password');
+  if(!email || !password) return alert("Enter email & password");
 
   try {
-    const snapshot = await get(child(ref(db), 'users'));
-    const users = snapshot.val();
-    let loggedIn = false;
-
-    for (let key in users) {
-      if (users[key].email.toLowerCase() === email && users[key].password === password) {
-        loggedIn = true;
-        break;
-      }
-    }
-
-    if (loggedIn) {
-  localStorage.setItem('currentUserEmail', email);
-  window.location.href = "main-menu.html";
-    } else {
-      alert('Incorrect email or password / Sign up first');
-    }
+    await signInWithEmailAndPassword(auth, email, password);
+    window.location.href = "main-menu.html";
   } catch (err) {
     alert(err.message);
   }
-});
+};
 </script>
+
 </body>
-</htm
+</html>
