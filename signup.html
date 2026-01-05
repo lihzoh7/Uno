@@ -1,27 +1,78 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Sign Up</title>
-  <link rel="stylesheet" href="css/signup.css">
+<meta charset="UTF-8">
+<title>SPACE GLASS - Sign Up</title>
+<style>
+body { background:#87ceeb; font-family: Arial; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; }
+.container { width:400px; background:rgba(0,0,0,0.15); padding:20px; border-radius:8px; }
+h1 { color:white; font-size:14px; text-align:center; }
+input { width:100%; padding:10px; margin:5px 0; border-radius:4px; border:none; }
+button { width:100%; padding:10px; background:green; color:white; border:none; border-radius:4px; margin-top:10px; cursor:pointer; }
+#back { position:absolute; top:10px; left:10px; cursor:pointer; }
+</style>
 </head>
 <body>
 
-<button onclick="history.back()">↩️</button>
-<h2>PERSONAL DETAILS</h2>
+<div id="back" onclick="location.href='index.html'">↩️</div>
 
-<input id="name" placeholder="Name">
-<input id="surname" placeholder="Surname">
-<input id="id" placeholder="ID Number">
-<input id="email" placeholder="Email">
-<input id="password" type="password" placeholder="Password (min 8 chars)">
-<input id="confirm" type="password" placeholder="Confirm Password">
+<div class="container">
+  <h1>PERSONAL DETAILS</h1>
+  <input id="name" placeholder="Name">
+  <input id="surname" placeholder="Surname">
+  <input id="idNumber" placeholder="ID Number">
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Password (min 8)">
+  <input id="confirmPassword" type="password" placeholder="Confirm Password">
+  <button id="submitBtn">SUBMIT</button>
+</div>
 
-<h2>BANK DETAILS</h2>
-<input id="bank" placeholder="Bank Name">
-<input id="account" placeholder="Account Number">
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-<button id="submit">SUBMIT</button>
+const firebaseConfig = {
+  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+  authDomain: "tose-ccf8f.firebaseapp.com",
+  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "tose-ccf8f"
+};
 
-<script type="module" src="js/signup.js"></script>
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+document.getElementById('submitBtn').onclick = async () => {
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
+
+  if(password.length < 8) return alert("Password too short");
+  if(password !== confirmPassword.value) return alert("Passwords do not match");
+
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    const uid = cred.user.uid;
+
+    await set(ref(db, `users/${uid}`), {
+      name: name.value,
+      surname: surname.value,
+      idNumber: idNumber.value,
+      email,
+      wallet: {
+        balance: 0,
+        lives: 0
+      },
+      createdAt: Date.now()
+    });
+
+    alert("Account created");
+    window.location.href = "index.html";
+  } catch (err) {
+    alert(err.message);
+  }
+};
+</script>
+
 </body>
 </html>
