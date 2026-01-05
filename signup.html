@@ -4,75 +4,101 @@
 <meta charset="UTF-8">
 <title>SPACE GLASS - Sign Up</title>
 <style>
-body { background:#87ceeb; font-family: Arial; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; }
-.container { width:400px; background:rgba(0,0,0,0.15); padding:20px; border-radius:8px; }
-h1 { color:white; font-size:14px; text-align:center; }
-input { width:100%; padding:10px; margin:5px 0; border-radius:4px; border:none; }
-button { width:100%; padding:10px; background:green; color:white; border:none; border-radius:4px; margin-top:10px; cursor:pointer; }
-#back { position:absolute; top:10px; left:10px; cursor:pointer; }
+body { background-color: lightblue; font-family: Arial, sans-serif; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; }
+.container { width:400px; background: rgba(0,0,0,0.1); padding:20px; border-radius:8px; }
+h1 { color:white; font-size:14px; text-align:center; margin-bottom:10px; }
+input { width:100%; padding:10px; margin:5px 0; box-sizing:border-box; border-radius:4px; border:none; }
+#submitBtn { width:100%; padding:10px; margin-top:10px; background-color:green; color:white; border:none; border-radius:4px; cursor:pointer; }
+#back { position:absolute; top:10px; left:10px; cursor:pointer; font-size:18px; color:white; }
 </style>
 </head>
 <body>
-
-<div id="back" onclick="location.href='index.html'">↩️</div>
-
+<div id="back" onclick="window.location.href='index.html'">↩️</div>
 <div class="container">
   <h1>PERSONAL DETAILS</h1>
   <input id="name" placeholder="Name">
   <input id="surname" placeholder="Surname">
   <input id="idNumber" placeholder="ID Number">
   <input id="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Password (min 8)">
+  <input id="nationality" placeholder="Nationality">
+  <input id="cellNumber" placeholder="Cell Number">
+  <input id="homeAddress" placeholder="Home Address">
+  <input id="suburb" placeholder="Suburb">
+  <input id="city" placeholder="City">
+  <input id="zipCode" placeholder="Zip Code">
+
+  <h1 style="margin-top:15px;">Security</h1>
+  <input id="password" type="password" placeholder="Password">
+  <small>Password must be ≥ 8 characters</small>
   <input id="confirmPassword" type="password" placeholder="Confirm Password">
+  <small>Confirm Password must match</small>
+
+  <h1 style="margin-top:15px;">BANK DETAILS</h1>
+  <input id="bankName" placeholder="Bank Name">
+  <input id="accountNumber" placeholder="Account Number">
+
   <button id="submitBtn">SUBMIT</button>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
+// Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
   authDomain: "tose-ccf8f.firebaseapp.com",
   databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "tose-ccf8f"
+  projectId: "tose-ccf8f",
+  storageBucket: "tose-ccf8f.firebasestorage.app",
+  messagingSenderId: "475447495901",
+  appId: "1:475447495901:web:9189276a162a3680afdf34",
 };
-
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 const db = getDatabase(app);
+const auth = getAuth(app);
 
-document.getElementById('submitBtn').onclick = async () => {
-  const email = emailInput.value.trim();
-  const password = passwordInput.value;
+document.getElementById('submitBtn').addEventListener('click', async () => {
+  const email = document.getElementById('email').value.trim().toLowerCase();
+  const password = document.getElementById('password').value;
+  const confirmPassword = document.getElementById('confirmPassword').value;
 
-  if(password.length < 8) return alert("Password too short");
-  if(password !== confirmPassword.value) return alert("Passwords do not match");
+  // Validation
+  if (!email || !password || !confirmPassword) return alert('Fill all fields');
+  if (password.length < 8) return alert('Password must be ≥ 8 characters');
+  if (password !== confirmPassword) return alert('Passwords do not match');
+
+  // Gather additional data
+  const userData = {
+    name: document.getElementById('name').value.trim(),
+    surname: document.getElementById('surname').value.trim(),
+    idNumber: document.getElementById('idNumber').value.trim(),
+    nationality: document.getElementById('nationality').value.trim(),
+    cellNumber: document.getElementById('cellNumber').value.trim(),
+    homeAddress: document.getElementById('homeAddress').value.trim(),
+    suburb: document.getElementById('suburb').value.trim(),
+    city: document.getElementById('city').value.trim(),
+    zipCode: document.getElementById('zipCode').value.trim(),
+    bankName: document.getElementById('bankName').value.trim(),
+    accountNumber: document.getElementById('accountNumber').value.trim(),
+    wallet: { balance: 0, lives: 0 } // initial wallet
+  };
 
   try {
-    const cred = await createUserWithEmailAndPassword(auth, email, password);
-    const uid = cred.user.uid;
+    // 1️⃣ Create user in Firebase Auth
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const uid = userCredential.user.uid;
 
-    await set(ref(db, `users/${uid}`), {
-      name: name.value,
-      surname: surname.value,
-      idNumber: idNumber.value,
-      email,
-      wallet: {
-        balance: 0,
-        lives: 0
-      },
-      createdAt: Date.now()
-    });
+    // 2️⃣ Save extra data in Realtime Database
+    await set(ref(db, `users/${uid}/profile`), userData);
 
-    alert("Account created");
-    window.location.href = "index.html";
+    alert('Account created successfully!');
+    window.location.href = 'index.html'; // redirect to login
   } catch (err) {
     alert(err.message);
   }
-};
+});
 </script>
-
 </body>
 </html>
